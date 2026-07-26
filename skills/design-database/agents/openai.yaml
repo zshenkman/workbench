@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Database"
+  short_description: "Document ideal database design, flows, and lineage"
+  default_prompt: "Use $design-database to define this project's ideal target database, user flows, and data pipelines."
