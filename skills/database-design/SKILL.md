@@ -1,9 +1,9 @@
 ---
-name: design-database
-description: Create or revise a complete target-state database catalog specification for a new proposal or existing application, including every schema, table, column, constraint, index, function or RPC, view, relationship, important user-action chronology, and data pipeline, with focused Mermaid diagrams. Use when designing a relational database, turning product requirements and implementation evidence into an ideal schema contract, documenting intended backend behavior, or auditing a database specification for completeness.
+name: database-design
+description: Create or revise a complete target-state database catalog specification for a new proposal or existing application, starting from required product features and tracing them into every schema, table, column, constraint, index, function or RPC, view, relationship, important user-action chronology, and data pipeline, with focused Mermaid diagrams. Use when designing a relational database, turning product requirements and implementation evidence into an ideal schema contract, documenting intended backend behavior, or auditing a database specification for completeness.
 ---
 
-# Design Database
+# Database Design
 
 Produce one authoritative Markdown specification that a capable newcomer can use
 to understand and implement the database without reconstructing decisions from
@@ -34,10 +34,11 @@ function, trigger, policy, partition, extension, queue, cache, denormalized
 field, pipeline, or diagram must have:
 
 1. a concrete invariant, access pattern, security boundary, or operational need;
-2. evidence from requirements, workload, or the implemented system;
-3. a reason a simpler shape or mechanism is insufficient;
-4. one clear owner;
-5. a failure cost and, for costly or provisional parts, a review or removal
+2. a required product feature or cross-cutting requirement it supports;
+3. evidence from requirements, workload, or the implemented system;
+4. a reason a simpler shape or mechanism is insufficient;
+5. one clear owner;
+6. a failure cost and, for costly or provisional parts, a review or removal
    trigger.
 
 Omit a mechanism when those answers are missing. Prefer a constraint over prose,
@@ -90,6 +91,50 @@ ideal target state, replace misleading, ambiguous, storage-shaped, or
 transition-shaped names with the clearest domain name without narrating the
 rename in the catalog.
 
+## Start from product capabilities
+
+Define the product features the target database must support before choosing
+schemas, entities, tables, or services. Treat this feature map as the source of
+truth for the rest of the architecture.
+
+Describe a feature as a stable user or business capability with an actor and
+outcome, not as a screen, endpoint, ticket, or proposed database mechanism.
+Assign each feature a stable ID such as `F-001`. For every feature, record:
+
+- primary actors and intended outcome;
+- commands, queries, state transitions, and important failure cases;
+- data the database must own, read, derive, retain, or delete;
+- domain invariants and authorization boundaries;
+- scale, latency, consistency, availability, privacy, audit, and retention
+  requirements that can affect architecture;
+- which responsibility belongs in the database and which belongs in the
+  application, a worker, or an external system.
+
+State **No database responsibility** when a feature needs no persistence or
+database-enforced invariant. Do not invent storage merely to make every feature
+map to a table.
+
+Capture cross-cutting requirements such as tenancy, identity, billing, audit,
+privacy, search, analytics, and retention once, then reference every affected
+feature. Derive a short set of architecture drivers from the feature map. Each
+driver must cite its feature or cross-cutting requirement IDs and state the
+database consequence it creates.
+
+Do not begin the object catalog until the in-scope feature map is explicit enough
+to guide ownership, boundaries, data shape, access patterns, and operational
+needs. Mark unresolved product behavior `TBD`; do not settle it indirectly with
+schema choices.
+
+Maintain bidirectional traceability:
+
+- every table, routine, view, policy, pipeline, and non-obvious index must cite a
+  feature or cross-cutting requirement;
+- every feature with a database responsibility must map to its user flows, data
+  objects, invariants, and relevant architecture drivers.
+
+An object with no requirement trace is a candidate for removal. A feature with
+no data-responsibility trace exposes an incomplete design.
+
 For an existing application, inspect executable schema definitions, applied
 migrations, models, generated types, queries, tests, runtime flows, and docs as
 evidence. Use them to recover real invariants, workload, consumers, and failure
@@ -134,18 +179,20 @@ intended steady state; describe its durable purpose without historical framing.
 
 Work from the outside in:
 
-1. Define global conventions and database-wide assumptions.
-2. Inventory every schema and object in scope.
-3. Challenge non-obvious moving parts and record why each is necessary.
-4. Map entities and cardinalities before detailing tables.
-5. Derive workload and access patterns from product flows and known consumers.
-6. Specify every table and its columns, constraints, indexes, policies,
+1. Define in-scope product features and cross-cutting requirements.
+2. Derive the architecture drivers and database responsibilities.
+3. Define global conventions and database-wide assumptions.
+4. Inventory every schema and object in scope.
+5. Challenge non-obvious moving parts and record why each is necessary.
+6. Map entities and cardinalities before detailing tables.
+7. Derive workload and access patterns from product flows and known consumers.
+8. Specify every table and its columns, constraints, indexes, policies,
    concurrency rules, and relationships.
-7. Specify every function/RPC and view.
-8. Trace common and important user actions through their backend effects.
-9. Trace important ingestion, transformation, synchronization, and export
+9. Specify every function/RPC and view.
+10. Trace common and important user actions through their backend effects.
+11. Trace important ingestion, transformation, synchronization, and export
    pipelines through the cataloged objects.
-10. Remove duplication and unjustified machinery, then run a target-state
+12. Remove duplication and unjustified machinery, then run a target-state
     completeness pass against requirements and evidence.
 
 Use fully qualified names whenever multiple schemas exist. Keep physical database
@@ -279,6 +326,12 @@ contract; diagrams illustrate the catalog but do not replace it.
 
 Before finishing:
 
+- confirm every in-scope product feature has an actor, outcome, database
+  responsibility, critical invariants, quality requirements, and architecture
+  driver where needed;
+- confirm every feature with a database responsibility maps to its flows and
+  catalog objects, and every catalog object maps back to a feature or
+  cross-cutting requirement;
 - compare the target object inventory with confirmed requirements and source
   evidence; do not carry forward current-only objects without a target need;
 - confirm that every table has one table section and every column appears once;
@@ -312,6 +365,7 @@ Before finishing:
 - run available schema, SQL lint, or documentation checks when they can validate
   the target model without turning the catalog into an implementation report.
 
-Report the catalog path, evidence used, target-design maturity, important
-unresolved decisions, and checks run. For an existing application, note material
-alignment concerns in the handoff without inserting them into the catalog.
+Report the catalog path, in-scope features, evidence used, target-design
+maturity, important unresolved decisions, and checks run. For an existing
+application, note material alignment concerns in the handoff without inserting
+them into the catalog.

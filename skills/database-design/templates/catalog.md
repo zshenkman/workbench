@@ -6,12 +6,57 @@
 > Catalog owner: [Team or role]  
 > Last verified: [YYYY-MM-DD]  
 > Design basis: [Greenfield requirements | Existing-application evidence and requirements]  
-> Evidence: [Requirements, schema/migration paths, database introspection, workloads, and tests]
+> Evidence: [Product requirements, schema/migration paths, database introspection, workloads, and tests]
 
-## 1. Purpose and scope
+## 1. Product capabilities and database responsibilities
+
+[Define the required product capabilities before describing the database. Use
+stable feature IDs throughout the catalog. Describe user or business outcomes,
+not screens, tickets, endpoints, tables, or implementation ideas.]
+
+### Feature register
+
+| ID | Product capability | Actors and outcome | Core actions and failure cases | Database responsibility | Critical invariants and authorization | Quality requirements |
+| --- | --- | --- | --- | --- | --- | --- |
+| F-001 | [Create and manage projects] | [Account owner creates a durable workspace for collaboration] | [Create, rename, archive; duplicate name, unauthorized actor, concurrent update] | [Own project identity, lifecycle state, membership, and audit facts] | [Only authorized members can read; only owners can archive] | [Read-after-write; expected scale; retention; audit need] |
+
+Use **No database responsibility** when a feature requires no persistence,
+database query, derived data, or database-enforced invariant.
+
+### Cross-cutting product requirements
+
+| ID | Requirement | Affected features | Database responsibility | Evidence |
+| --- | --- | --- | --- | --- |
+| X-001 | [Tenant isolation] | [F-001, F-002] | [Enforce tenant ownership and access at database boundaries] | [Product/security requirement] |
+
+### Architecture drivers
+
+[Derive only the decisions that materially shape ownership, boundaries, data
+models, access paths, consistency, security, or operations.]
+
+| ID | Feature / requirement refs | Driver | Database consequence | Evidence or target |
+| --- | --- | --- | --- | --- |
+| AD-001 | [F-001, X-001] | [Every tenant-owned read and write must be isolated] | [Tenant key participates in ownership, policies, and supporting indexes] | [Security requirement and expected workload] |
+
+### Feature-to-data map
+
+[When three or more feature-to-domain relationships are easier to understand
+visually, include a small map. Show responsibilities, not tables. Remove this
+diagram when the registers are clearer.]
+
+```mermaid
+flowchart LR
+    F001["F-001 Manage projects"] --> Projects["Project records and lifecycle"]
+    F001 --> Membership["Membership and authorization"]
+    F002["F-002 Invite collaborators"] --> Membership
+    X001["X-001 Tenant isolation"] --> Projects
+    X001 --> Membership
+```
+
+## 2. Purpose and scope
 
 [Describe what this target database supports, what the catalog covers, and what
-is out of scope.]
+is out of scope. Summarize the feature boundary established above.]
 
 ### Catalog design principles
 
@@ -28,7 +73,7 @@ is out of scope.]
 - Describe only the ideal steady state. Keep implementation gaps, rollout phases,
   compatibility work, and migration history in separate documents.
 
-## 2. Global conventions
+## 3. Global conventions
 
 | Concern | Convention |
 | --- | --- |
@@ -58,7 +103,7 @@ is out of scope.]
 | --- | --- | --- | --- | --- |
 | TBD-001 | [Question that must be answered] | [Objects or behavior affected] | [Owner or TBD] | [Date or TBD] |
 
-## 3. Object inventory
+## 4. Object inventory
 
 ### Schemas
 
@@ -68,12 +113,12 @@ is out of scope.]
 
 ### Catalog objects
 
-| Qualified name | Kind | Purpose | Design evidence |
-| --- | --- | --- | --- |
-| `[schema.table_name]` | Table | [One sentence] | [Requirement, workload, invariant, or source evidence] |
-| `[schema.function_name]` | Function/RPC | [One sentence] | [Requirement, workload, invariant, or source evidence] |
-| `[schema.view_name]` | View | [One sentence] | [Requirement, workload, invariant, or source evidence] |
-| `[schema.policy_or_trigger]` | [RLS policy/Trigger/Type/Sequence] | [One sentence] | [Requirement, workload, invariant, or source evidence] |
+| Qualified name | Kind | Purpose | Feature / requirement refs | Design evidence |
+| --- | --- | --- | --- | --- |
+| `[schema.table_name]` | Table | [One sentence] | [F-001, X-001] | [Workload, invariant, or source evidence] |
+| `[schema.function_name]` | Function/RPC | [One sentence] | [F-001] | [Workload, invariant, or source evidence] |
+| `[schema.view_name]` | View | [One sentence] | [F-002] | [Workload, invariant, or source evidence] |
+| `[schema.policy_or_trigger]` | [RLS policy/Trigger/Type/Sequence] | [One sentence] | [X-001] | [Workload, invariant, or source evidence] |
 
 ### Moving-parts justification
 
@@ -83,11 +128,11 @@ denormalized fields, advisory locks, queues, caches, and synchronization jobs.
 Do not repeat straightforward tables, constraints, or indexes already justified
 in their owning sections.]
 
-| Mechanism | Concrete need | Evidence | Why a simpler design is insufficient | Owner | Failure cost | Review/removal trigger |
-| --- | --- | --- | --- | --- | --- | --- |
-| `[reporting.project_summary materialized view]` | [Measured reporting need] | [Query plan, workload, or requirement] | [Why a normal view or indexed query is insufficient] | [Owner] | [Staleness or outage impact] | [Volume, latency, or product condition] |
+| Mechanism | Feature / requirement refs | Concrete need | Evidence | Why a simpler design is insufficient | Owner | Failure cost | Review/removal trigger |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `[reporting.project_summary materialized view]` | [F-006] | [Measured reporting need] | [Query plan, workload, or requirement] | [Why a normal view or indexed query is insufficient] | [Owner] | [Staleness or outage impact] | [Volume, latency, or product condition] |
 
-## 4. Relationship model
+## 5. Relationship model
 
 [Include every direct table relationship. Split by bounded context when needed,
 then include a small cross-context diagram.]
@@ -105,12 +150,14 @@ erDiagram
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `[schema.child]` | `[parent_id]` | `[schema.parent(id)]` | [Each child has exactly one parent; a parent has zero or more children] | [Foreign key name, or unenforced with integrity owner] | [NO ACTION] | [CASCADE] | [Business meaning] |
 
-## 5. Table catalog
+## 6. Table catalog
 
 [Repeat the following subsection for every table. Keep columns in declaration
 order. Use exact database syntax for types and expressions.]
 
 ### `[schema.table_name]`
+
+**Feature / requirement refs:** [F-001, X-001]
 
 **Purpose:** [Why the table exists]  
 **Why a separate table:** [Invariant, lifecycle, cardinality, or access need that
@@ -189,11 +236,13 @@ that a foreign-key index exists unless it does.]
 sensitive-data handling, full-text/JSONB behavior, and maintenance or monitoring
 rules. Write "None" when there are no additional notes.]
 
-## 6. Functions and RPCs
+## 7. Functions and RPCs
 
 [Repeat for every database function and remotely exposed procedure.]
 
 ### `[schema.function_name]`
+
+**Feature / requirement refs:** [F-001]
 
 **Purpose:** [Operation and business outcome]  
 **Why database-owned:** [Shared integrity, atomicity, authorization, or
@@ -224,11 +273,13 @@ parallel safety, and cost/rows where relevant]
 **Errors:** [SQLSTATE/domain error, condition, and caller-visible behavior]  
 **Consumers:** [Call sites, roles, services, or triggers]
 
-## 7. Views
+## 8. Views
 
 [Repeat for every regular and materialized view.]
 
 ### `[schema.view_name]`
+
+**Feature / requirement refs:** [F-002]
 
 **Kind:** [View | Materialized view]  
 **Purpose:** [Consumer need]  
@@ -250,7 +301,7 @@ semantics, or none]
 **Refresh:** [For a materialized view: owner, method, cadence/trigger,
 concurrency, staleness target, and required unique index. Otherwise: not applicable.]
 
-## 8. User flows and data pipelines
+## 9. User flows and data pipelines
 
 [Document the common flows needed to understand normal use and the important
 flows with material authorization, financial, privacy, deletion, fan-out,
@@ -259,12 +310,14 @@ include speculative flows; mark unresolved contracts `TBD`.]
 
 ### Flow inventory
 
-| Flow | Kind | Trigger | Actor/source | Backend outcome | Importance | Owner |
-| --- | --- | --- | --- | --- | --- | --- |
-| [Create project] | User action | [Submitted form or API call] | [Authenticated account] | [Creates project and owner membership] | [Common primary path] | [Team/role] |
-| [Usage rollup] | Data pipeline | [Schedule or event] | [Application events] | [Refreshes reporting aggregates] | [Billing/reporting dependency] | [Team/role] |
+| Flow | Feature / requirement refs | Kind | Trigger | Actor/source | Backend outcome | Importance | Owner |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| [Create project] | [F-001] | User action | [Submitted form or API call] | [Authenticated account] | [Creates project and owner membership] | [Common primary path] | [Team/role] |
+| [Usage rollup] | [F-006] | Data pipeline | [Schedule or event] | [Application events] | [Refreshes reporting aggregates] | [Billing/reporting dependency] | [Team/role] |
 
 ### User action: [Flow name]
+
+**Feature / requirement refs:** [F-001, X-001]
 
 **Purpose:** [User goal and business outcome]  
 **Actor:** [User type or system actor]  
@@ -310,6 +363,8 @@ sequenceDiagram
 
 ### Data pipeline: [Pipeline name]
 
+**Feature / requirement refs:** [F-006]
+
 **Purpose:** [Business use and consumers]  
 **Why a pipeline:** [Why synchronous or direct database work cannot meet the
 volume, latency, isolation, integration, or recovery requirement]  
@@ -346,7 +401,7 @@ retention, and access boundary]
 
 [Repeat the data-pipeline subsection for each selected important pipeline.]
 
-## 9. Operational rules
+## 10. Operational rules
 
 ### Schema evolution and deployment
 
@@ -376,10 +431,13 @@ concurrent index work, partition creation, and post-load `ANALYZE` where relevan
 | Concurrency | [Deadlocks, lock waits, connection saturation] | [Target] | [Owner] | [Triage and remediation] |
 | Pipelines | [Lag, data quality, dead-letter volume] | [Target] | [Owner] | [Replay/recovery] |
 
-## 10. Completeness and verification
+## 11. Completeness and verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
+| Every in-scope feature defines its database responsibility, invariants, authorization, and quality requirements | [Pass/Fail/TBD] | [Feature register review] |
+| Every feature with a database responsibility maps to flows and catalog objects | [Pass/Fail/TBD] | [Feature trace review] |
+| Every catalog object traces to a feature or cross-cutting requirement | [Pass/Fail/TBD] | [Object inventory review] |
 | Every schema object is in the inventory | [Pass/Fail/TBD] | [Source or command] |
 | Every table and column is documented | [Pass/Fail/TBD] | [Source or command] |
 | Every constraint and index is documented | [Pass/Fail/TBD] | [Source or command] |
