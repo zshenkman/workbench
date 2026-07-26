@@ -14,14 +14,23 @@ the skill directory.
 ## Skills
 
 Skills live in `skills/<skill-name>/SKILL.md`. A skill may also include
-`rules/`, `scripts/`, `references/`, and `assets/` alongside its `SKILL.md`.
+`README.md`, `AGENTS.md`, `rules/`, `scripts/`, `references/`, and `assets/`
+alongside its `SKILL.md`.
 
+- `README.md` contains human-facing installation and usage documentation.
+- `AGENTS.md` contains authored instructions for maintaining the skill package.
 - `rules/` contains normative instructions the skill must explicitly load.
 - `references/` contains supporting domain information loaded when needed.
 - `scripts/` contains deterministic operations.
 - `assets/` contains files used to produce output.
 
-The skills catalog is intentionally empty for now.
+Do not generate `AGENTS.md`. Keep it concise and specific to package
+maintenance. Generated skill resources remain declared in `build.config.json`.
+
+The catalog currently includes:
+
+- [`febreeze`](skills/febreeze/SKILL.md): find and remove structural code smells
+  through ambitious review and refactoring.
 
 ### Build skills
 
