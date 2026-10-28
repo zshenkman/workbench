@@ -1,4 +1,0 @@
-interface:
-  display_name: "Brainstorm"
-  short_description: "Explore and ground product ideas before specification"
-  default_prompt: "Use $brainstorm to explore and ground this product idea before we write a formal specification."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Database Design"
-  short_description: "Turn product capabilities into an ideal database"
-  default_prompt: "Use $database-design to map this product's required capabilities into an ideal target database, user flows, and data pipelines."

@@ -1,9 +1,0 @@
-{
-  "rules": [
-    "naming.md",
-    "code-naming.md",
-    "database-naming.md",
-    "abstractions.md",
-    "scaffolding.md"
-  ]
-}

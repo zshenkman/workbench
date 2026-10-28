@@ -1,98 +1,24 @@
 # Workbench
 
-Reusable AI development rules, skills, hooks, and tooling for Codex, Claude, Cursor, and other agents.
-
-## Rules
-
-Canonical reusable rules live in `rules/`. Rules are normative instructions
-that skills may include in their own `rules/` directories.
-
-Keep each installed skill self-contained. When the catalog contains skills,
-build the applicable canonical rules into each skill instead of linking outside
-the skill directory.
+Agent skills I use every day. They work in Claude Code, Codex, Cursor, and other agents.
 
 ## Skills
 
-Skills live in `skills/<skill-name>/SKILL.md`. A skill may also include
-`README.md`, `AGENTS.md`, `rules/`, `scripts/`, `references/`, and `assets/`
-alongside its `SKILL.md`.
+| Skill | What it does |
+| --- | --- |
+| [`beautiful-code`](skills/beautiful-code/SKILL.md) | Code-quality principles for any task that touches code, each with a BAD and GOOD example. |
+| [`file-pr`](skills/file-pr/SKILL.md) | Writes a PR title and description a reviewer can read cold: the problem first, then the change, its behavior changes, and the proof. |
 
-- `README.md` contains human-facing installation and usage documentation.
-- `AGENTS.md` contains authored instructions for maintaining the skill package.
-- `rules/` contains normative instructions the skill must explicitly load.
-- `references/` contains supporting domain information loaded when needed.
-- `scripts/` contains deterministic operations.
-- `assets/` contains files used to produce output.
+## Install
 
-Do not generate `AGENTS.md`. Keep it concise and specific to package
-maintenance. Generated skill resources remain declared in `build.config.json`.
-
-The catalog currently includes:
-
-- [`febreeze`](skills/febreeze/SKILL.md): find and remove structural code smells
-  through ambitious review and refactoring.
-
-### Build skills
-
-Declare each skill's generated resources in
-`skills/<skill-name>/build.config.json`. For example,
-`skills/code-review/build.config.json` can contain:
-
-```json
-{
-  "rules": ["naming.md", "code-naming.md"]
-}
-```
-
-The build runs an ordered set of resource steps. The rules step replaces each
-configured skill's entire `rules/` directory with the selected files from the
-root `rules/` directory. A skill with no `build.config.json`, or no `rules`
-entry in its config, is ignored by that step. Every configured skill must also
-contain `SKILL.md`.
-
-Build all generated skill resources:
-
-```sh
-npm run build
-```
-
-Check that committed generated resources match their canonical sources:
-
-```sh
-npm run check
-```
-
-The check runs every build step and reports missing, changed, and extra
-generated files without modifying them. Add new build steps to
-`scripts/build.mjs`; keep each step's implementation under `scripts/build/`.
-
-## Git hooks
-
-Enable the tracked hooks for this clone:
-
-```sh
-npm run hooks:install
-```
-
-The pre-commit hook runs the test suite and verifies that generated skill
-resources match their canonical sources.
-
-### Install
-
-Install every skill in the catalog once skills have been added:
+Install every skill:
 
 ```sh
 npx skills add zshenkman/workbench
 ```
 
-List the available skills:
-
-```sh
-npx skills add zshenkman/workbench --list
-```
-
 Install one skill:
 
 ```sh
-npx skills add zshenkman/workbench --skill <skill-name>
+npx skills add zshenkman/workbench --skill file-pr
 ```
